@@ -31,8 +31,8 @@ interface KayentaService {
 }
 
 data class CanaryExecutionRequest(
-  var scopes: Map<String, CanaryScopes> = emptyMap(),
-  var thresholds: Thresholds
+  val scopes: Map<String, CanaryScopes> = emptyMap(),
+  val thresholds: Thresholds
 )
 
 data class CanaryScopes(
@@ -43,8 +43,8 @@ data class CanaryScopes(
 data class CanaryScope(
   val scope: String,
   val region: String?,
-  var start: Instant, // TODO: val
-  var end: Instant, // TODO: val
+  val start: Instant,
+  val end: Instant,
   val step: Duration = Duration.ofSeconds(60),
   val extendedScopeParams: Map<String, String> = emptyMap()
 )
