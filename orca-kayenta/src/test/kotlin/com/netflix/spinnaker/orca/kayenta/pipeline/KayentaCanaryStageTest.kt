@@ -21,9 +21,10 @@ import com.netflix.spinnaker.orca.jackson.OrcaObjectMapper
 import com.netflix.spinnaker.orca.kayenta.CanaryScope
 import com.netflix.spinnaker.orca.pipeline.WaitStage
 import com.netflix.spinnaker.orca.pipeline.model.Stage
+import com.netflix.spinnaker.spek.and
+import com.netflix.spinnaker.spek.where
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.spek.api.Spek
-import org.jetbrains.spek.api.dsl.SpecBody
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it
@@ -43,39 +44,38 @@ object KayentaCanaryStageTest : Spek({
 
   describe("planning a canary stage") {
     given("start/end times are specified") {
-      listOf(
+      where(
         Pair(null, listOf("runCanary")),
         Pair("", listOf("runCanary")),
         Pair("0", listOf("runCanary")),
         Pair("30", listOf("wait", "runCanary"))
-      )
-        .forEach { (beginCanaryAnalysisAfterMins, expectedStageTypes) ->
-          and("canary analysis should start after $beginCanaryAnalysisAfterMins minutes") {
-            val kayentaCanaryStage = stage {
-              type = "kayentaCanary"
-              name = "Run Kayenta Canary"
-              context["canaryConfig"] = mapOf(
-                "canaryConfigId" to "MySampleStackdriverCanaryConfig",
-                "startTime" to clock.instant().toString(),
-                "endTime" to clock.instant().plus(4, HOURS).toString(),
-                "scopes" to listOf(mapOf(
-                  "controlScope" to "myapp-v010",
-                  "experimentScope" to "myapp-v021"
-                )),
-                "scoreThresholds" to mapOf("marginal" to 75, "pass" to 90),
-                "beginCanaryAnalysisAfterMins" to beginCanaryAnalysisAfterMins
-              )
-            }
+      ) { (beginCanaryAnalysisAfterMins, expectedStageTypes) ->
+        and("canary analysis should start after $beginCanaryAnalysisAfterMins minutes") {
+          val kayentaCanaryStage = stage {
+            type = "kayentaCanary"
+            name = "Run Kayenta Canary"
+            context["canaryConfig"] = mapOf(
+              "canaryConfigId" to "MySampleStackdriverCanaryConfig",
+              "startTime" to clock.instant().toString(),
+              "endTime" to clock.instant().plus(4, HOURS).toString(),
+              "scopes" to listOf(mapOf(
+                "controlScope" to "myapp-v010",
+                "experimentScope" to "myapp-v021"
+              )),
+              "scoreThresholds" to mapOf("marginal" to 75, "pass" to 90),
+              "beginCanaryAnalysisAfterMins" to beginCanaryAnalysisAfterMins
+            )
+          }
 
-            val aroundStages = builder.aroundStages(kayentaCanaryStage)
+          val aroundStages = builder.aroundStages(kayentaCanaryStage)
 
-            it("should not introduce wait stages") {
-              assertThat(aroundStages).extracting("type").isEqualTo(expectedStageTypes)
-            }
+          it("should not introduce wait stages") {
+            assertThat(aroundStages).extracting("type").isEqualTo(expectedStageTypes)
           }
         }
+      }
 
-      listOf(
+      where(
         Pair(Input(null, null, null), CanaryRanges(0 to 240)),
         Pair(Input(null, "", ""), CanaryRanges(0 to 240)),
         Pair(Input(null, "0", "0"), CanaryRanges(0 to 240)),
@@ -93,66 +93,65 @@ object KayentaCanaryStageTest : Spek({
         Pair(Input("15", "0", "60"), CanaryRanges(180 to 240)),
         Pair(Input("15", "60", "60"), CanaryRanges(0 to 60, 60 to 120, 120 to 180, 180 to 240)),
         Pair(Input(null, "300", null), CanaryRanges(0 to 240))
-      )
-        .forEach { (input, canaryRanges) ->
-          and("canary should start after ${input.beginCanaryAnalysisAfterMins} minutes with an interval of ${input.canaryAnalysisIntervalMins} minutes and lookback of ${input.lookbackMins} minutes") {
-            val kayentaCanaryStage = stage {
-              type = "kayentaCanary"
-              name = "Run Kayenta Canary"
-              context["canaryConfig"] = mapOf(
-                "canaryConfigId" to "MySampleStackdriverCanaryConfig",
-                "startTime" to clock.instant().toString(),
-                "endTime" to clock.instant().plus(4, HOURS).toString(),
-                "scopes" to listOf(mapOf(
-                  "controlScope" to "myapp-v010",
-                  "experimentScope" to "myapp-v021"
-                )),
-                "scoreThresholds" to mapOf("marginal" to 75, "pass" to 90),
-                "beginCanaryAnalysisAfterMins" to input.beginCanaryAnalysisAfterMins,
-                "canaryAnalysisIntervalMins" to input.canaryAnalysisIntervalMins,
-                "lookbackMins" to input.lookbackMins
-              )
-            }
+      ) { (input, canaryRanges) ->
+        and("canary should start after ${input.beginCanaryAnalysisAfterMins} minutes with an interval of ${input.canaryAnalysisIntervalMins} minutes and lookback of ${input.lookbackMins} minutes") {
+          val kayentaCanaryStage = stage {
+            type = "kayentaCanary"
+            name = "Run Kayenta Canary"
+            context["canaryConfig"] = mapOf(
+              "canaryConfigId" to "MySampleStackdriverCanaryConfig",
+              "startTime" to clock.instant().toString(),
+              "endTime" to clock.instant().plus(4, HOURS).toString(),
+              "scopes" to listOf(mapOf(
+                "controlScope" to "myapp-v010",
+                "experimentScope" to "myapp-v021"
+              )),
+              "scoreThresholds" to mapOf("marginal" to 75, "pass" to 90),
+              "beginCanaryAnalysisAfterMins" to input.beginCanaryAnalysisAfterMins,
+              "canaryAnalysisIntervalMins" to input.canaryAnalysisIntervalMins,
+              "lookbackMins" to input.lookbackMins
+            )
+          }
 
-            val aroundStages = builder.aroundStages(kayentaCanaryStage)
+          val aroundStages = builder.aroundStages(kayentaCanaryStage)
 
-            it("still handles canary intervals properly") {
+          it("still handles canary intervals properly") {
+            aroundStages
+              .controlScopes()
+              .apply {
+                assertThat(map { clock.instant().until(it.start, MINUTES) }).isEqualTo(canaryRanges.startAtMin.map { it.toLong() })
+                assertThat(map { clock.instant().until(it.end, MINUTES) }).isEqualTo(canaryRanges.endAtMin.map { it.toLong() })
+                assertThat(map { it.step }).allMatch { it == Duration.ofMinutes(1) }
+              }
+          }
+
+          if (input.beginCanaryAnalysisAfterMins != null) {
+            val expectedWarmupWait = input.beginCanaryAnalysisAfterMins.toInt()
+            it("inserts a warmup wait stage of $expectedWarmupWait minutes") {
               aroundStages
-                .controlScopes()
+                .filter { it.name == "Warmup Wait" }
                 .apply {
-                  assertThat(map { clock.instant().until(it.start, MINUTES) }).isEqualTo(canaryRanges.startAtMin.map { it.toLong() })
-                  assertThat(map { clock.instant().until(it.end, MINUTES) }).isEqualTo(canaryRanges.endAtMin.map { it.toLong() })
-                  assertThat(map { it.step }).allMatch { it == Duration.ofMinutes(1) }
+                  assertThat(this).hasSize(1)
+                  assertThat(first().context["waitTime"])
+                    .isEqualTo(expectedWarmupWait.minutesInSeconds.toLong())
                 }
             }
-
-            if (input.beginCanaryAnalysisAfterMins != null) {
-              val expectedWarmupWait = input.beginCanaryAnalysisAfterMins.toInt()
-              it("inserts a warmup wait stage of $expectedWarmupWait minutes") {
-                aroundStages
-                  .filter { it.name == "Warmup Wait" }
-                  .apply {
-                    assertThat(this).hasSize(1)
-                    assertThat(first().context["waitTime"])
-                      .isEqualTo(expectedWarmupWait.minutesInSeconds.toLong())
-                  }
-              }
-            } else {
-              it("does not insert a warmup wait stage") {
-                assertThat(aroundStages).noneMatch { it.name == "Warmup Wait" }
-              }
+          } else {
+            it("does not insert a warmup wait stage") {
+              assertThat(aroundStages).noneMatch { it.name == "Warmup Wait" }
             }
           }
         }
+      }
     }
 
     given("start and end times are not specified") {
-      listOf(
+      where(
         Triple(null, listOf("wait", "runCanary"), 0L),
         Triple("", listOf("wait", "runCanary"), 0L),
         Triple("0", listOf("wait", "runCanary"), 0L),
         Triple("30", listOf("wait", "wait", "runCanary"), 30L)
-      ).forEach { (beginCanaryAnalysisAfterMins, expectedStageTypes, warmupWaitPeriodMinutes) ->
+      ) { (beginCanaryAnalysisAfterMins, expectedStageTypes, warmupWaitPeriodMinutes) ->
         and("canary analysis should begin after $beginCanaryAnalysisAfterMins minutes") {
           val kayentaCanaryStage = stage {
             type = "kayentaCanary"
@@ -196,7 +195,7 @@ object KayentaCanaryStageTest : Spek({
         }
       }
 
-      listOf(
+      where(
         Pair(Input(null, null, null), CanaryRanges(0 to 48.hoursInMinutes)),
         Pair(Input(null, "", ""), CanaryRanges(0 to 48.hoursInMinutes)),
         Pair(Input(null, "0", "0"), CanaryRanges(0 to 48.hoursInMinutes)),
@@ -213,7 +212,7 @@ object KayentaCanaryStageTest : Spek({
         Pair(Input("45", "", "60"), CanaryRanges(45 + 47.hoursInMinutes to 45 + 48.hoursInMinutes)),
         Pair(Input("45", "0", "60"), CanaryRanges(45 + 47.hoursInMinutes to 45 + 48.hoursInMinutes)),
         Pair(Input("45", "${8.hoursInMinutes}", "60"), CanaryRanges(45 + 7.hoursInMinutes to 45 + 8.hoursInMinutes, 45 + 15.hoursInMinutes to 45 + 16.hoursInMinutes, 45 + 23.hoursInMinutes to 45 + 24.hoursInMinutes, 45 + 31.hoursInMinutes to 45 + 32.hoursInMinutes, 45 + 39.hoursInMinutes to 45 + 40.hoursInMinutes, 45 + 47.hoursInMinutes to 45 + 48.hoursInMinutes))
-      ).forEach { (input, canaryRanges) ->
+      ) { (input, canaryRanges) ->
 
         and("canary should start after ${input.beginCanaryAnalysisAfterMins} minutes with an interval of ${input.canaryAnalysisIntervalMins} minutes and lookback of ${input.lookbackMins} minutes") {
 
@@ -363,6 +362,3 @@ val Int.minutesInSeconds: Int
 val Long.minutesInSeconds: Long
   get() = Duration.ofMinutes(this).seconds
 
-fun SpecBody.and(description: String, body: SpecBody.() -> Unit) {
-  group("and $description", body = body)
-}

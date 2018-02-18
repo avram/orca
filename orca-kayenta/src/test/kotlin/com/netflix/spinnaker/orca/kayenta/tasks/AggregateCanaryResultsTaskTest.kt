@@ -22,6 +22,7 @@ import com.netflix.spinnaker.orca.fixture.pipeline
 import com.netflix.spinnaker.orca.fixture.stage
 import com.netflix.spinnaker.orca.kayenta.pipeline.KayentaCanaryStage
 import com.netflix.spinnaker.orca.kayenta.pipeline.RunCanaryPipelineStage
+import com.netflix.spinnaker.spek.where
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
@@ -34,7 +35,7 @@ object AggregateCanaryResultsTaskSpec : Spek({
   val task = AggregateCanaryResultsTask()
 
   describe("aggregating canary scores") {
-    sequenceOf(
+    where(
       Triple(listOf(10.5, 40.0, 60.5), emptyMap(), SUCCEEDED),
       Triple(listOf(10.5, 40.0, 60.5), mapOf("pass" to 60.5), SUCCEEDED),
       Triple(listOf(10.5, 40.0, 60.5), mapOf("pass" to 55), SUCCEEDED),
@@ -62,7 +63,7 @@ object AggregateCanaryResultsTaskSpec : Spek({
       Triple(listOf(65.0), mapOf("marginal" to 68, "pass" to 70), TERMINAL),
       Triple(listOf(65.0), mapOf("marginal" to 68), TERMINAL),
       Triple(listOf(65.0), mapOf("marginal" to 68), TERMINAL)
-    ).forEach { (canaryScores, scoreThresholds, overallExecutionStatus) ->
+    ) { (canaryScores, scoreThresholds, overallExecutionStatus) ->
 
       given("canary scores of $canaryScores and thresholds of $scoreThresholds") {
         val pipeline = pipeline {
