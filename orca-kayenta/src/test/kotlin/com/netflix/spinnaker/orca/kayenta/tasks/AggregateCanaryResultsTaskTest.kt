@@ -22,11 +22,11 @@ import com.netflix.spinnaker.orca.fixture.pipeline
 import com.netflix.spinnaker.orca.fixture.stage
 import com.netflix.spinnaker.orca.kayenta.pipeline.KayentaCanaryStage
 import com.netflix.spinnaker.orca.kayenta.pipeline.RunCanaryPipelineStage
+import com.netflix.spinnaker.spek.row
 import com.netflix.spinnaker.spek.where
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
-import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it
 import java.util.*
 
@@ -36,71 +36,70 @@ object AggregateCanaryResultsTaskSpec : Spek({
 
   describe("aggregating canary scores") {
     where(
-      Triple(listOf(10.5, 40.0, 60.5), emptyMap(), SUCCEEDED),
-      Triple(listOf(10.5, 40.0, 60.5), mapOf("pass" to 60.5), SUCCEEDED),
-      Triple(listOf(10.5, 40.0, 60.5), mapOf("pass" to 55), SUCCEEDED),
-      Triple(listOf(10.5, 40.0, 60.5), mapOf("marginal" to 5, "pass" to 60.5), SUCCEEDED),
-      Triple(listOf(10.5, 40.0, 60.5), mapOf("marginal" to 5, "pass" to 55), SUCCEEDED),
-      Triple(listOf(10.5, 40.0, 60.5), mapOf("marginal" to 5), SUCCEEDED),
-      Triple(listOf(10.5, 40.0, 60.5), mapOf("marginal" to 5), SUCCEEDED),
-      Triple(listOf(65.0), emptyMap(), SUCCEEDED),
-      Triple(listOf(65.0), mapOf("pass" to 60.5), SUCCEEDED),
-      Triple(listOf(65.0), mapOf("pass" to 55), SUCCEEDED),
-      Triple(listOf(65.0), mapOf("marginal" to 5, "pass" to 60.5), SUCCEEDED),
-      Triple(listOf(65.0), mapOf("marginal" to 5, "pass" to 55), SUCCEEDED),
-      Triple(listOf(65.0), mapOf("marginal" to 5), SUCCEEDED),
-      Triple(listOf(65.0), mapOf("marginal" to 5), SUCCEEDED),
-      Triple(listOf(10.5, 40.0, 60.5), mapOf("pass" to 70), TERMINAL),
-      Triple(listOf(10.5, 40.0, 60.5), mapOf("pass" to 70), TERMINAL),
-      Triple(listOf(10.5, 40.0, 60.5), mapOf("marginal" to 5, "pass" to 70), TERMINAL),
-      Triple(listOf(10.5, 40.0, 60.5), mapOf("marginal" to 5, "pass" to 70), TERMINAL),
-      Triple(listOf(65.0), emptyMap(), SUCCEEDED),
-      Triple(listOf(65.0), mapOf("pass" to 70), TERMINAL),
-      Triple(listOf(65.0), mapOf("pass" to 70), TERMINAL),
-      Triple(listOf(65.0), mapOf("marginal" to 5, "pass" to 70), TERMINAL),
-      Triple(listOf(65.0), mapOf("marginal" to 5, "pass" to 70), TERMINAL),
-      Triple(listOf(65.0), mapOf("marginal" to 68, "pass" to 70), TERMINAL),
-      Triple(listOf(65.0), mapOf("marginal" to 68, "pass" to 70), TERMINAL),
-      Triple(listOf(65.0), mapOf("marginal" to 68), TERMINAL),
-      Triple(listOf(65.0), mapOf("marginal" to 68), TERMINAL)
-    ) { (canaryScores, scoreThresholds, overallExecutionStatus) ->
+      "canary scores of %s and thresholds of %s",
+      row(listOf(10.5, 40.0, 60.5), emptyMap(), SUCCEEDED),
+      row(listOf(10.5, 40.0, 60.5), mapOf("pass" to 60.5), SUCCEEDED),
+      row(listOf(10.5, 40.0, 60.5), mapOf("pass" to 55), SUCCEEDED),
+      row(listOf(10.5, 40.0, 60.5), mapOf("marginal" to 5, "pass" to 60.5), SUCCEEDED),
+      row(listOf(10.5, 40.0, 60.5), mapOf("marginal" to 5, "pass" to 55), SUCCEEDED),
+      row(listOf(10.5, 40.0, 60.5), mapOf("marginal" to 5), SUCCEEDED),
+      row(listOf(10.5, 40.0, 60.5), mapOf("marginal" to 5), SUCCEEDED),
+      row(listOf(65.0), emptyMap(), SUCCEEDED),
+      row(listOf(65.0), mapOf("pass" to 60.5), SUCCEEDED),
+      row(listOf(65.0), mapOf("pass" to 55), SUCCEEDED),
+      row(listOf(65.0), mapOf("marginal" to 5, "pass" to 60.5), SUCCEEDED),
+      row(listOf(65.0), mapOf("marginal" to 5, "pass" to 55), SUCCEEDED),
+      row(listOf(65.0), mapOf("marginal" to 5), SUCCEEDED),
+      row(listOf(65.0), mapOf("marginal" to 5), SUCCEEDED),
+      row(listOf(10.5, 40.0, 60.5), mapOf("pass" to 70), TERMINAL),
+      row(listOf(10.5, 40.0, 60.5), mapOf("pass" to 70), TERMINAL),
+      row(listOf(10.5, 40.0, 60.5), mapOf("marginal" to 5, "pass" to 70), TERMINAL),
+      row(listOf(10.5, 40.0, 60.5), mapOf("marginal" to 5, "pass" to 70), TERMINAL),
+      row(listOf(65.0), emptyMap(), SUCCEEDED),
+      row(listOf(65.0), mapOf("pass" to 70), TERMINAL),
+      row(listOf(65.0), mapOf("pass" to 70), TERMINAL),
+      row(listOf(65.0), mapOf("marginal" to 5, "pass" to 70), TERMINAL),
+      row(listOf(65.0), mapOf("marginal" to 5, "pass" to 70), TERMINAL),
+      row(listOf(65.0), mapOf("marginal" to 68, "pass" to 70), TERMINAL),
+      row(listOf(65.0), mapOf("marginal" to 68, "pass" to 70), TERMINAL),
+      row(listOf(65.0), mapOf("marginal" to 68), TERMINAL),
+      row(listOf(65.0), mapOf("marginal" to 68), TERMINAL)
+    ) { canaryScores, scoreThresholds, overallExecutionStatus ->
 
-      given("canary scores of $canaryScores and thresholds of $scoreThresholds") {
-        val pipeline = pipeline {
-          canaryScores.forEachIndexed { i, score ->
-            stage {
-              refId = "1<$i"
-              type = RunCanaryPipelineStage.STAGE_TYPE
-              name = "runCanary"
-              context["canaryScore"] = score
-            }
-          }
+      val pipeline = pipeline {
+        canaryScores.forEachIndexed { i, score ->
           stage {
-            refId = "1"
-            type = KayentaCanaryStage.STAGE_TYPE
-            name = "kayentaCanary"
-            context["canaryConfig"] = mapOf(
-              "canaryConfigId" to UUID.randomUUID().toString(),
-              "scopes" to listOf(mapOf(
-                "controlScope" to "myapp-v010",
-                "experimentScope" to "myapp-v021"
-              )),
-              "scoreThresholds" to scoreThresholds,
-              "lifetimeHours" to "1"
-            )
+            refId = "1<$i"
+            type = RunCanaryPipelineStage.STAGE_TYPE
+            name = "runCanary"
+            context["canaryScore"] = score
           }
         }
-        val canaryStage = pipeline.stageByRef("1")
-
-        val taskResult = task.execute(canaryStage)
-
-        it("stores the aggregated scores") {
-          assertThat(taskResult.context["canaryScores"]).isEqualTo(canaryScores)
+        stage {
+          refId = "1"
+          type = KayentaCanaryStage.STAGE_TYPE
+          name = "kayentaCanary"
+          context["canaryConfig"] = mapOf(
+            "canaryConfigId" to UUID.randomUUID().toString(),
+            "scopes" to listOf(mapOf(
+              "controlScope" to "myapp-v010",
+              "experimentScope" to "myapp-v021"
+            )),
+            "scoreThresholds" to scoreThresholds,
+            "lifetimeHours" to "1"
+          )
         }
+      }
+      val canaryStage = pipeline.stageByRef("1")
 
-        it("returns a status of $overallExecutionStatus") {
-          assertThat(taskResult.status).isEqualTo(overallExecutionStatus)
-        }
+      val taskResult = task.execute(canaryStage)
+
+      it("stores the aggregated scores") {
+        assertThat(taskResult.context["canaryScores"]).isEqualTo(canaryScores)
+      }
+
+      it("returns a status of $overallExecutionStatus") {
+        assertThat(taskResult.status).isEqualTo(overallExecutionStatus)
       }
     }
   }

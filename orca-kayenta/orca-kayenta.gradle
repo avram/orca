@@ -22,4 +22,5 @@ dependencies {
 
   testCompile "org.assertj:assertj-core:3.9.0"
   testCompile project(":orca-test")
+  testCompile "org.funktionale:funktionale-partials:1.1"
 }
